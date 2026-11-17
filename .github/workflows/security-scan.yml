@@ -1,0 +1,51 @@
+name: Trivy security scan
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      # Fixed Trivy v0.66.0 release pinned by verified image digest.
+      - name: Scan dependencies to JSON (scanner errors fail closed)
+        id: scan
+        shell: bash
+        run: |
+          mkdir -p results
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE:/workspace:ro" \
+            -v "$GITHUB_WORKSPACE/results:/output" \
+            aquasec/trivy:0.66.0@sha256:086971aaf400beebd94e8300fd8ea623774419597169156cec56eec5b00dfb1e fs \
+            --scanners vuln \
+            --format json \
+            --output /output/trivy.json \
+            --exit-code 0 \
+            /workspace/sample-app
+
+      # The gate is separate from the scanner so scanner failures are not mistaken for clean scans.
+      - name: Evaluate High/Critical gate
+        if: steps.scan.outcome == 'success'
+        shell: bash
+        run: python3 scripts/quality_gate.py results/trivy.json
+
+      - name: Upload raw scan artifact even on failure
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: trivy-json-${{ github.run_id }}-${{ github.run_attempt }}
+          path: results/trivy.json
+          if-no-files-found: warn
+          retention-days: 14
