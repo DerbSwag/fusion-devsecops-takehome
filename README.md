@@ -1,6 +1,6 @@
 # Fusion Advantec — Junior DevSecOps Take-home
 
-**Status: Complete — FAIL (`main`) and PASS (PR #1, open/unmerged) CI runs, screenshots, JSON artifacts, logs, and both reports are verified and committed.**
+**Status: Hardened on `fix/final-submission-hardening-20261117` (pending PR verification). Historical FAIL baseline and PASS remediation evidence are committed. PR #1 has been merged into `main`; latest `main` scan passed.**
 
 ## Purpose
 GitHub Actions on `push` to `main` and `pull_request` to `main` runs a digest-pinned Trivy v0.66.0 filesystem dependency scan (`aquasec/trivy:0.66.0@sha256:086971aaf400beebd94e8300fd8ea623774419597169156cec56eec5b00dfb1e`), exports JSON, and applies a separate High/Critical quality gate (`scripts/quality_gate.py`). Scanner failures are never treated as PASS.
@@ -12,7 +12,7 @@ GitHub Actions on `push` to `main` and `pull_request` to `main` runs a digest-pi
    ```
    Commit `package-lock.json` (do not commit `node_modules/`).
 2. **Baseline FAIL run**: Pushing the intentionally vulnerable manifest (`axios@0.21.1`, `express@4.17.1`, `jsonwebtoken@8.5.1`, `lodash@4.17.20`, `minimist@0.0.8`) to `main` triggers Trivy, detects 1 Critical / 20 High / 21 Medium / 7 Low findings, fails `scripts/quality_gate.py` with exit code `1`, and uploads the raw JSON artifact.
-3. **Dependency remediation (PASS run)**: On branch `fix/remediate-dependencies` (PR [#1](https://github.com/DerbSwag/fusion-devsecops-takehome/pull/1), currently open and unmerged), the five dependencies were upgraded to patched versions (`axios@1.21.1`, `express@4.22.3`, `jsonwebtoken@9.0.3`, `lodash@4.18.1`, `minimist@1.2.8` in `package-lock.json`), triggering the `pull_request` workflow and passing `scripts/quality_gate.py` with exit code `0` (`0` findings across all severities) without weakening security controls.
+3. **Dependency remediation (PASS run)**: On branch `fix/remediate-dependencies` (PR [#1](https://github.com/DerbSwag/fusion-devsecops-takehome/pull/1), merged into `main`), the five dependencies were upgraded to patched versions (`axios@1.21.1`, `express@4.22.3`, `jsonwebtoken@9.0.3`, `lodash@4.18.1`, `minimist@1.2.8` in `package-lock.json`), triggering the `pull_request` workflow and passing `scripts/quality_gate.py` with exit code `0` (`0` findings across all severities) without weakening security controls.
 4. Original CI JSON artifacts are preserved in `results/` and CI logs in `evidence/logs/`.
 5. To reproduce the scan locally with Docker:
    ```bash
@@ -26,15 +26,17 @@ GitHub Actions on `push` to `main` and `pull_request` to `main` runs a digest-pi
 `python3 scripts/quality_gate.py results/trivy.json` returns:
 - `0`: zero High/Critical findings (`GATE_PASS`)
 - `1`: one or more High/Critical findings (`GATE_FAIL`)
-- `2`: missing, empty, malformed, or schema-invalid JSON (`SCAN_ERROR`)
+- `2`: missing, empty, malformed, schema-invalid JSON, or missing expected npm lockfile target (`SCAN_ERROR`)
 
-The workflow runs the gate only when `steps.scan.outcome == 'success'` and uploads `results/trivy.json` with `if: always()`. Unit tests are in `tests/test_quality_gate.py` (`python3 -m unittest discover -s tests -v`).
+The workflow runs unit tests before scanning, runs the gate only when `steps.scan.outcome == 'success'`, and uploads `results/trivy.json` with `if: always()`. The gate verifies that Trivy inspected the expected `package-lock.json` npm target; missing or unrelated targets fail closed rather than returning a false PASS. Unit tests are in `tests/test_quality_gate.py` (`python3 -m unittest discover -s tests -v`).
 
 ## Design decisions and limitations
 - **Pinning**: `aquasec/trivy:0.66.0` is pinned by verified `sha256` digest (`sha256:086971aaf400beebd94e8300fd8ea623774419597169156cec56eec5b00dfb1e`), and `actions/checkout` (`11d5960a326750d5838078e36cf38b85af677262`) and `actions/upload-artifact` (`ea165f8d65b6e75b540449e92b4886f43607fa02`) are pinned by full commit SHA.
 - **Scope**: Dependency-only scanning (`--scanners vuln` on `/workspace/sample-app`, covering `package-lock.json`) is not SAST and does not test running services, secrets, or infrastructure misconfigurations.
 - **Database drift**: The Trivy vulnerability database updates over time, so scan counts can change by scan date. Always record scan timestamp, tool version, run URL, and commit SHA.
-- **Pass semantics**: A PASS means zero High/Critical findings in this dependency scope at scan time, not proof of an application free of all security risks.
+- **Pass semantics**: A PASS means Trivy scanned the expected npm lockfile and reported zero High/Critical findings within this dependency scope, not proof of an application free of all security risks.
+- **Historical vs current state**: The FAIL artifact was captured on vulnerable `main` before PR #1; the PASS artifact was captured on PR #1 before merge. PR #1 is now merged; `main` at `a32f03fd6fb6491230d6d41a678619b80195b955` independently passed [run 44027721027](https://github.com/DerbSwag/fusion-devsecops-takehome/actions/runs/44027721027). Historical screenshots, JSON, and logs remain unchanged.
+- **Hardened branch validation**: New target-validation tests and CI unit tests must be verified by the branch/PR CI run before considering this hardening accepted.
 - Do not deploy intentionally vulnerable sample manifests publicly.
 
 ## AI assistance disclosure
