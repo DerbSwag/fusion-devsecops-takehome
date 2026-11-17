@@ -1,7 +1,7 @@
 # Executive Summary — Dependency Security & CI Gate
 
-**Overall Risk Rating:** **HIGH (Baseline)** -> **LOW (Post-Remediation PR #1, pending merge)**  
-*Rationale:* The `main` branch baseline (`b319129`) contains 21 blocking vulnerabilities (1 Critical, 20 High) in core HTTP, authentication, and utility dependencies. Upgrading those 5 dependencies in PR #1 (`dbcfa10`) eliminated all 49 detected vulnerabilities and passed the automated CI quality gate (`exit 0`).
+**Overall Risk Rating:** **HIGH (Baseline)** -> **LOW (Post-Remediation PR #1, merged to `main` — Run `44027721027` succeeded)**  
+*Rationale:* The `main` branch baseline (`b319129`) contained 21 blocking vulnerabilities (1 Critical, 20 High) in core HTTP, authentication, and utility dependencies. Upgrading those 5 dependencies in PR #1 (`dbcfa10`, merged to `main` at `a32f03f`) eliminated all 49 detected vulnerabilities and passed the automated CI quality gate (`exit 0`).
 
 ## Finding Counts by Severity
 | Baseline vs. Remediated | Critical | High | Medium | Low | Total | CI Gate |
@@ -25,8 +25,7 @@ xychart-beta
 
 ## Action Plan
 - **Within 1 week**:
-  1. Review and merge PR [#1](https://github.com/DerbSwag/fusion-devsecops-takehome/pull/1) so `main` carries the remediated dependencies.
-  2. Enable branch protection on `main` requiring the `security-scan` status check to pass before merge.
+  1. Enable branch protection on `main` requiring the `security-scan` status check to pass before merge (PR #1 is merged and verified on `main` via run `44027721027`).
 - **Within 1 month**:
   1. Add scheduled weekly Trivy scans (`schedule` cron) to catch newly disclosed CVEs between code changes.
   2. Expand CI coverage beyond dependency SCA to include SAST and secret scanning.

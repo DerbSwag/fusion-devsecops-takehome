@@ -1,6 +1,6 @@
 # Fusion Advantec — Junior DevSecOps Take-home
 
-**Status: Complete — FAIL (`main`) and PASS (PR #1, open/unmerged) CI runs, screenshots, JSON artifacts, logs, and both reports are verified and committed.**
+**Status: Complete — FAIL (`main`) and PASS (PR #1, merged to `main`) CI runs, post-merge `main` CI run `44027721027`, screenshots, JSON artifacts, logs, and both reports are verified and committed.**
 
 ## Purpose
 GitHub Actions on `push` to `main` and `pull_request` to `main` runs a digest-pinned Trivy v0.66.0 filesystem dependency scan (`aquasec/trivy:0.66.0@sha256:086971aaf400beebd94e8300fd8ea623774419597169156cec56eec5b00dfb1e`), exports JSON, and applies a separate High/Critical quality gate (`scripts/quality_gate.py`). Scanner failures are never treated as PASS.
@@ -12,7 +12,7 @@ GitHub Actions on `push` to `main` and `pull_request` to `main` runs a digest-pi
    ```
    Commit `package-lock.json` (do not commit `node_modules/`).
 2. **Baseline FAIL run**: Pushing the intentionally vulnerable manifest (`axios@0.21.1`, `express@4.17.1`, `jsonwebtoken@8.5.1`, `lodash@4.17.20`, `minimist@0.0.8`) to `main` triggers Trivy, detects 1 Critical / 20 High / 21 Medium / 7 Low findings, fails `scripts/quality_gate.py` with exit code `1`, and uploads the raw JSON artifact.
-3. **Dependency remediation (PASS run)**: On branch `fix/remediate-dependencies` (PR [#1](https://github.com/DerbSwag/fusion-devsecops-takehome/pull/1), currently open and unmerged), the five dependencies were upgraded to patched versions (`axios@1.21.1`, `express@4.22.3`, `jsonwebtoken@9.0.3`, `lodash@4.18.1`, `minimist@1.2.8` in `package-lock.json`), triggering the `pull_request` workflow and passing `scripts/quality_gate.py` with exit code `0` (`0` findings across all severities) without weakening security controls.
+3. **Dependency remediation (PASS run)**: On branch `fix/remediate-dependencies` (PR [#1](https://github.com/DerbSwag/fusion-devsecops-takehome/pull/1), merged to `main` at `a32f03fd6fb6491230d6d41a678619b80195b955` with `main` CI run `44027721027` succeeding), the five dependencies were upgraded to patched versions (`axios@1.21.1`, `express@4.22.3`, `jsonwebtoken@9.0.3`, `lodash@4.18.1`, `minimist@1.2.8` in `package-lock.json`), triggering the `pull_request` workflow and passing `scripts/quality_gate.py` with exit code `0` (`0` findings across all severities) without weakening security controls.
 4. Original CI JSON artifacts are preserved in `results/` and CI logs in `evidence/logs/`.
 5. To reproduce the scan locally with Docker:
    ```bash
@@ -44,7 +44,8 @@ Workflow hardening, quality-gate validation/tests, remediation verification, and
 | Run type | Trigger | Commit SHA | Actions URL | Artifact name & local path | Verified gate outcome |
 |---|---|---|---|---|---|
 | FAIL | `push` (`main`) | `b319129715d45b2c736b2cc403cc8e2bcdc38e7d` | https://github.com/DerbSwag/fusion-devsecops-takehome/actions/runs/44021949406 | `trivy-json-44021949406-1` (`results/run-fail-44021949406.json`) | `GATE_FAIL` (`exit 1`: Critical 1, High 20, Medium 21, Low 7) |
-| PASS | `pull_request` (PR #1, open) | `dbcfa10513c98872961ee933f0da5dc7dc529be8` | https://github.com/DerbSwag/fusion-devsecops-takehome/actions/runs/44024570812 | `trivy-json-44024570812-1` (`results/run-pass-44024570812.json`) | `GATE_PASS` (`exit 0`: Critical 0, High 0, Medium 0, Low 0) |
+| PASS | `pull_request` (PR #1, merged) | `dbcfa10513c98872961ee933f0da5dc7dc529be8` | https://github.com/DerbSwag/fusion-devsecops-takehome/actions/runs/44024570812 | `trivy-json-44024570812-1` (`results/run-pass-44024570812.json`) | `GATE_PASS` (`exit 0`: Critical 0, High 0, Medium 0, Low 0) |
+| Post-merge | `push` (`main`) | `a32f03fd6fb6491230d6d41a678619b80195b955` | https://github.com/DerbSwag/fusion-devsecops-takehome/actions/runs/44027721027 | — (post-merge verification run) | `success` |
 
 ## Reports & evidence files
 - **Executive Summary**: [report/executive-summary.md](report/executive-summary.md)
