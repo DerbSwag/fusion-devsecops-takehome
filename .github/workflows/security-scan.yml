@@ -19,6 +19,10 @@ jobs:
         with:
           persist-credentials: false
 
+      # Validate the quality-gate logic before trusting a scanner result.
+      - name: Run quality-gate unit tests
+        run: python3 -m unittest discover -s tests -v
+
       # Fixed Trivy v0.66.0 release pinned by verified image digest.
       - name: Scan dependencies to JSON (scanner errors fail closed)
         id: scan

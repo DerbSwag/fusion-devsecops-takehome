@@ -21,13 +21,21 @@ def _validate_report(data: object) -> list[dict]:
     if not isinstance(data.get("ArtifactType"), str) or not data["ArtifactType"]:
         raise ValueError("Trivy ArtifactType missing or invalid")
 
-    # Trivy omits "Results" when 0 language-specific files/targets are found (e.g. empty dependencies).
-    if "Results" not in data:
-        return []
-
-    results = data["Results"]
-    if not isinstance(results, list):
-        raise ValueError("Trivy Results must be an array")
+    # A scan with no matching npm lockfile is not evidence of a clean target.
+    # A successful scan must report the expected dependency target, even if
+    # Trivy omits its Vulnerabilities field when no findings are detected.
+    results = data.get("Results")
+    if not isinstance(results, list) or not results:
+        raise ValueError("Trivy Results missing or empty; expected npm lockfile target")
+    targets = [
+        result for result in results
+        if isinstance(result, dict)
+        and result.get("Target") == "package-lock.json"
+        and result.get("Class") == "lang-pkgs"
+        and result.get("Type") == "npm"
+    ]
+    if not targets:
+        raise ValueError("expected npm package-lock.json target not scanned")
     return results
 
 

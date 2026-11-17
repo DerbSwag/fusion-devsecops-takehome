@@ -7,7 +7,9 @@
 - **Pinned Actions**: `actions/checkout@11d5960a326750d5838078e36cf38b85af677262` (`v4`), `actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02` (`v4`)
 - **Quality Gate**: `scripts/quality_gate.py` (Python 3; exits `0` for zero High/Critical, `1` for High/Critical findings, `2` for missing/empty/malformed scan data)
 - **FAIL Baseline Run**: `push` to `main` — Commit `b319129715d45b2c736b2cc403cc8e2bcdc38e7d`, Run `44021949406` (2026-11-17T05:08:38Z)
-- **PASS Remediation Run**: `pull_request` (PR #1, merged to `main` at `a32f03fd6fb6491230d6d41a678619b80195b955`, `main` CI run [`44027721027`](https://github.com/DerbSwag/fusion-devsecops-takehome/actions/runs/44027721027) succeeded) — Commit `dbcfa10513c98872961ee933f0da5dc7dc529be8`, Run `44024570812` (2026-11-17T05:30:43Z)
+- **PASS Remediation Run**: `pull_request` (PR #1, merged to `main` at `a32f03fd6fb6491230d6d41a678619b80195b955`) — Commit `dbcfa10513c98872961ee933f0da5dc7dc529be8`, Run `44024570812` (2026-11-17T05:30:43Z)
+- **Post-Merge `main` PASS**: Commit `a32f03fd6fb6491230d6d41a678619b80195b955`, [Run 44027721027](https://github.com/DerbSwag/fusion-devsecops-takehome/actions/runs/44027721027) (0 Critical / High / Medium / Low findings, verified from CI logs). This is distinct from the archived PR PASS artifact.
+- **Submission-hardening branch**: `fix/final-submission-hardening-20261117` (PR #2); additional target validation and CI unit tests are subject to PR #2 CI verification.
 
 ## 2. Scan Scope and Limitations
 - **Scope**: Filesystem dependency vulnerability scan (`trivy fs --scanners vuln --format json`) targeting `/workspace/sample-app` (`sample-app/package-lock.json`, `lang-pkgs` / `npm`).
