@@ -1,7 +1,8 @@
 # Executive Summary — Dependency Security & CI Gate
 
-**Overall Risk Rating:** **HIGH (Historical Baseline)** -> **LOW within dependency-scan scope (After PR #1 merged into `main`)**  
-*Rationale:* The `main` branch baseline (`b319129`) contains 21 blocking vulnerabilities (1 Critical, 20 High) in core HTTP, authentication, and utility dependencies. Upgrading those 5 dependencies in PR #1 (`dbcfa10`) eliminated all 49 detected vulnerabilities in the reported scan scope and passed the automated CI quality gate (`exit 0`). PR #1 has since been merged as `a32f03f`; the post-merge `main` run `44027721027` also passed with zero findings.
+**Overall Risk Rating:** **HIGH (Historical Baseline)** -> **LOW within dependency-scan scope (After PR #1 merged into `main` at `a32f03f` — Run `44027721027` succeeded)**
+
+*Rationale:* The `main` branch baseline (`b319129`) contained 21 blocking vulnerabilities (1 Critical, 20 High) in core HTTP, authentication, and utility dependencies. Upgrading those 5 dependencies in PR #1 (`dbcfa10`) eliminated all 49 detected vulnerabilities in the reported scan scope and passed the automated CI quality gate (`exit 0`). PR #1 has since been merged as `a32f03f`; the post-merge `main` run `44027721027` also passed with zero findings.
 
 ## Finding Counts by Severity
 | Baseline vs. Remediated | Critical | High | Medium | Low | Total | CI Gate |
@@ -25,7 +26,7 @@ xychart-beta
 
 ## Action Plan
 - **Within 1 week**:
-  1. **Completed**: PR [#1](https://github.com/DerbSwag/fusion-devsecops-takehome/pull/1) was merged; verify the hardened CI checks on the new submission-hardening PR.
+  1. **Completed**: PR [#1](https://github.com/DerbSwag/fusion-devsecops-takehome/pull/1) was merged and verified on `main` via run `44027721027`; verify the hardened CI checks on PR [#2](https://github.com/DerbSwag/fusion-devsecops-takehome/pull/2) (`fix/final-submission-hardening-20261117`).
   2. Enable branch protection on `main` requiring the `security-scan` status check to pass before merge.
 - **Within 1 month**:
   1. Add scheduled weekly Trivy scans (`schedule` cron) to catch newly disclosed CVEs between code changes.
