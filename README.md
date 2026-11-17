@@ -1,38 +1,53 @@
-# Fusion Advantec — Junior DevSecOps Take-home (starter)
+# Fusion Advantec — Junior DevSecOps Take-home
 
-**Status: NOT EXECUTED.** This starter contains no real CI evidence or scan findings. Never claim a PASS or FAIL without linking an actual GitHub Actions run and its downloaded JSON artifact.
+**Status: Complete — FAIL (`main`) and PASS (PR #1, open/unmerged) CI runs, screenshots, JSON artifacts, logs, and both reports are verified and committed.**
 
 ## Purpose
-GitHub Actions on `push` to `main` and `pull_request` to `main` runs a version-fixed Trivy filesystem dependency scan, saves JSON, then applies a separate High/Critical quality gate. Scanner failure is not treated as PASS. No secrets required for this public vulnerability-only sample.
+GitHub Actions on `push` to `main` and `pull_request` to `main` runs a digest-pinned Trivy v0.66.0 filesystem dependency scan (`aquasec/trivy:0.66.0@sha256:086971aaf400beebd94e8300fd8ea623774419597169156cec56eec5b00dfb1e`), exports JSON, and applies a separate High/Critical quality gate (`scripts/quality_gate.py`). Scanner failures are never treated as PASS.
 
 ## Setup and reproducible evidence
-1. Create a NEW repository under your own account. Do not add credentials. Review every file.
-2. From `sample-app/`, run `npm install --package-lock-only --ignore-scripts` on your own machine. Commit `package-lock.json` (do not commit `node_modules`). This is required for reliable dependency detection.
-3. Push the intentionally vulnerable manifest/lockfile to `main` and capture the **real failing run** URL, screenshot, logs, and artifact JSON. Check the actual gate message and findings. If the scanner errors instead, troubleshoot; it is NOT valid gate-fail evidence.
-4. For a **passing run**, replace the vulnerable dependencies with an empty dependency map in `sample-app/package.json`, regenerate lockfile (`npm install --package-lock-only --ignore-scripts`), commit/push to `main`, and verify the real gate pass. This is a *clean test fixture*, not remediation of the vulnerable application. Record that limitation.
-5. Open a PR against `main` with an authorized test change to demonstrate the PR trigger. Verify the scan actually ran.
-6. Download artifacts from each run; place the original JSON in `results/` with distinct names, and redact logs before storing them in `evidence/logs/`. Capture actual screenshots as `evidence/run-fail.png` and `evidence/run-pass.png`.
-7. Create reports based ONLY on real JSON; counts must reconcile to the exact scan artifact and run/commit SHA. Do not fabricate five findings or false positives.
+1. From `sample-app/`, regenerate the lockfile with install scripts disabled:
+   ```bash
+   npm install --package-lock-only --ignore-scripts
+   ```
+   Commit `package-lock.json` (do not commit `node_modules/`).
+2. **Baseline FAIL run**: Pushing the intentionally vulnerable manifest (`axios@0.21.1`, `express@4.17.1`, `jsonwebtoken@8.5.1`, `lodash@4.17.20`, `minimist@0.0.8`) to `main` triggers Trivy, detects 1 Critical / 20 High / 21 Medium / 7 Low findings, fails `scripts/quality_gate.py` with exit code `1`, and uploads the raw JSON artifact.
+3. **Dependency remediation (PASS run)**: On branch `fix/remediate-dependencies` (PR [#1](https://github.com/DerbSwag/fusion-devsecops-takehome/pull/1), currently open and unmerged), the five dependencies were upgraded to patched versions (`axios@1.21.1`, `express@4.22.3`, `jsonwebtoken@9.0.3`, `lodash@4.18.1`, `minimist@1.2.8` in `package-lock.json`), triggering the `pull_request` workflow and passing `scripts/quality_gate.py` with exit code `0` (`0` findings across all severities) without weakening security controls.
+4. Original CI JSON artifacts are preserved in `results/` and CI logs in `evidence/logs/`.
+5. To reproduce the scan locally with Docker:
+   ```bash
+   docker run --rm -v "${PWD}/sample-app:/workspace:ro" -v "${PWD}/results:/output" \
+     aquasec/trivy:0.66.0@sha256:086971aaf400beebd94e8300fd8ea623774419597169156cec56eec5b00dfb1e \
+     fs --scanners vuln --format json --output /output/trivy-local.json --exit-code 0 /workspace
+   python3 scripts/quality_gate.py results/trivy-local.json
+   ```
 
 ## Quality gate
-`python3 scripts/quality_gate.py results/trivy.json` returns 0 for zero High/Critical, 1 for findings, and 2 for missing/invalid data. The workflow fails if scanner exits nonzero, even if a JSON file exists. Artifacts upload with `if: always()`.
+`python3 scripts/quality_gate.py results/trivy.json` returns:
+- `0`: zero High/Critical findings (`GATE_PASS`)
+- `1`: one or more High/Critical findings (`GATE_FAIL`)
+- `2`: missing, empty, malformed, or schema-invalid JSON (`SCAN_ERROR`)
+
+The workflow runs the gate only when `steps.scan.outcome == 'success'` and uploads `results/trivy.json` with `if: always()`. Unit tests are in `tests/test_quality_gate.py` (`python3 -m unittest discover -s tests -v`).
 
 ## Design decisions and limitations
-- Trivy v0.66.0 is fixed to a release tag; production hardening should pin the container image by verified digest and pin GitHub Actions by full commit SHA. Tags are not immutable.
-- `actions/checkout@v4` and `actions/upload-artifact@v4` are major-version tags, not full-SHA pins; improve before final submission if feasible.
-- Dependency-only scanning (`--scanners vuln`) is not SAST and does not test running services, secrets, or misconfigurations.
-- Trivy vulnerability database is updated over time: results can differ by scan date. Store scan timestamp, tool version, run URL, and commit SHA.
-- A pass means no High/Critical findings **in this scan scope at that time**, not proof of a secure application.
-- Avoid deploying intentionally vulnerable sample applications to the internet.
+- **Pinning**: `aquasec/trivy:0.66.0` is pinned by verified `sha256` digest (`sha256:086971aaf400beebd94e8300fd8ea623774419597169156cec56eec5b00dfb1e`), and `actions/checkout` (`11d5960a326750d5838078e36cf38b85af677262`) and `actions/upload-artifact` (`ea165f8d65b6e75b540449e92b4886f43607fa02`) are pinned by full commit SHA.
+- **Scope**: Dependency-only scanning (`--scanners vuln` on `/workspace/sample-app`, covering `package-lock.json`) is not SAST and does not test running services, secrets, or infrastructure misconfigurations.
+- **Database drift**: The Trivy vulnerability database updates over time, so scan counts can change by scan date. Always record scan timestamp, tool version, run URL, and commit SHA.
+- **Pass semantics**: A PASS means zero High/Critical findings in this dependency scope at scan time, not proof of an application free of all security risks.
+- Do not deploy intentionally vulnerable sample manifests publicly.
 
 ## AI assistance disclosure
-Initial workflow, quality gate, sample manifest, and README were drafted with AI assistance. Candidate must review, test, understand, and revise each component before submitting. Actual runs, findings, screenshots, and reports must be independently verified.
+Workflow hardening, quality-gate validation/tests, remediation verification, and documentation updates were prepared with AI assistance and independently verified via local unit tests, Dockerized Trivy scans, and real GitHub Actions runs.
 
-## Evidence manifest (fill after real execution)
-| Run type | Commit SHA | Actions URL | JSON artifact | Verified gate outcome |
-|---|---|---|---|---|
-| FAIL | TBD | TBD | TBD | TBD |
-| PASS | TBD | TBD | TBD | TBD |
+## Evidence manifest
+| Run type | Trigger | Commit SHA | Actions URL | Artifact name & local path | Verified gate outcome |
+|---|---|---|---|---|---|
+| FAIL | `push` (`main`) | `b319129715d45b2c736b2cc403cc8e2bcdc38e7d` | https://github.com/DerbSwag/fusion-devsecops-takehome/actions/runs/44021949406 | `trivy-json-44021949406-1` (`results/run-fail-44021949406.json`) | `GATE_FAIL` (`exit 1`: Critical 1, High 20, Medium 21, Low 7) |
+| PASS | `pull_request` (PR #1, open) | `dbcfa10513c98872961ee933f0da5dc7dc529be8` | https://github.com/DerbSwag/fusion-devsecops-takehome/actions/runs/44024570812 | `trivy-json-44024570812-1` (`results/run-pass-44024570812.json`) | `GATE_PASS` (`exit 0`: Critical 0, High 0, Medium 0, Low 0) |
 
-## Reports
-See `report/` for reporting templates. Complete only after collecting real scan artifacts.
+## Reports & evidence files
+- **Executive Summary**: [report/executive-summary.md](report/executive-summary.md)
+- **Technical Report**: [report/technical-report.md](report/technical-report.md)
+- **CI Screenshots**: [evidence/run-fail.png](evidence/run-fail.png) and [evidence/run-pass.png](evidence/run-pass.png)
+- **CI Logs**: [evidence/logs/run-fail-44021949406.log](evidence/logs/run-fail-44021949406.log) and [evidence/logs/run-pass-44024570812.log](evidence/logs/run-pass-44024570812.log)
