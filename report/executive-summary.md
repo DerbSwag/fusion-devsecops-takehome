@@ -1,17 +1,39 @@
-# Executive Summary — TEMPLATE (maximum one page after formatting)
+# Executive Summary — Dependency Security & CI Gate
 
-**Risk level:** TBD — justified from actual findings and exposure context.
+**Overall Risk Rating:** **HIGH (Baseline)** -> **LOW (Post-Remediation PR #1, pending merge)**  
+*Rationale:* The `main` branch baseline (`b319129`) contains 21 blocking vulnerabilities (1 Critical, 20 High) in core HTTP, authentication, and utility dependencies. Upgrading those 5 dependencies in PR #1 (`dbcfa10`) eliminated all 49 detected vulnerabilities and passed the automated CI quality gate (`exit 0`).
 
-**Finding counts:** Critical TBD / High TBD / Medium TBD / Low TBD.
+## Finding Counts by Severity
+| Baseline vs. Remediated | Critical | High | Medium | Low | Total | CI Gate |
+|---|---:|---:|---:|---:|---:|---|
+| Baseline (`main` — Run `44021949406`) | 1 | 20 | 21 | 7 | 49 | **FAIL** (`exit 1`) |
+| Remediated (PR #1 — Run `44024570812`) | 0 | 0 | 0 | 0 | 0 | **PASS** (`exit 0`) |
 
-**Business impact:** TBD — avoid unsupported impact claims.
+```mermaid
+xychart-beta
+    title "Baseline vs. Remediated Vulnerabilities (Trivy 0.66.0)"
+    x-axis ["Critical", "High", "Medium", "Low"]
+    y-axis "Findings" 0 --> 25
+    bar [1, 20, 21, 7]
+    bar [0, 0, 0, 0]
+```
 
-**Within 1 week:** TBD.
+## Business Impact
+- **Service availability & outages**: Multiple High/Critical flaws in `express` transitive packages (`body-parser`, `path-to-regexp`, `qs`) and `axios` allow attackers to crash or hang Node.js services with crafted requests.
+- **Data exposure & unauthorized access**: Outdated `axios` and `jsonwebtoken` versions expose applications to server-side request forgery (SSRF), proxy credential leakage, and weak JWT key handling.
+- **Release governance**: The fail-closed CI quality gate now blocks vulnerable dependency changes automatically before reaching production, while preserving audit artifacts on every run.
 
-**Within 1 month:** TBD.
+## Action Plan
+- **Within 1 week**:
+  1. Capture and archive the two pending GitHub Actions UI screenshots (`evidence/run-fail.png`, `evidence/run-pass.png`).
+  2. Review and merge PR [#1](https://github.com/DerbSwag/fusion-devsecops-takehome/pull/1) so `main` carries the remediated dependencies.
+  3. Enable branch protection on `main` requiring the `security-scan` status check to pass before merge.
+- **Within 1 month**:
+  1. Add scheduled weekly Trivy scans (`schedule` cron) to catch newly disclosed CVEs between code changes.
+  2. Expand CI coverage beyond dependency SCA to include SAST and secret scanning.
 
-**Decision/support requested:** TBD.
+## Management Decisions / Resources Requested
+- Approve branch-protection enforcement on `main` requiring `security-scan` to pass for all Pull Requests.
+- Allocate ~2–4 engineering hours per month for dependency updates and SAST/secret-scanning onboarding.
 
-**Evidence:** GitHub Actions run URL TBD; JSON artifact TBD; commit SHA TBD.
-
-Chart: add after verifying severity counts. No sample chart is evidence.
+**Evidence:** FAIL Run `44021949406` (`b319129`, `trivy-json-44021949406-1`) | PASS Run `44024570812` (`dbcfa10`, `trivy-json-44024570812-1`).
