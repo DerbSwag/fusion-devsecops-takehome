@@ -43,6 +43,8 @@ class QualityGateTests(unittest.TestCase):
                 Results=[
                     {
                         "Target": "package-lock.json",
+                        "Class": "lang-pkgs",
+                        "Type": "npm",
                         "Vulnerabilities": [
                             {"VulnerabilityID": "CVE-1", "Severity": "CRITICAL"},
                             {"VulnerabilityID": "CVE-2", "Severity": "HIGH"},
@@ -61,6 +63,8 @@ class QualityGateTests(unittest.TestCase):
                 Results=[
                     {
                         "Target": "package-lock.json",
+                        "Class": "lang-pkgs",
+                        "Type": "npm",
                         "Vulnerabilities": [
                             {"VulnerabilityID": "CVE-4", "Severity": "MEDIUM"},
                             {"VulnerabilityID": "CVE-5", "Severity": "LOW"},
@@ -71,9 +75,46 @@ class QualityGateTests(unittest.TestCase):
         )
         self.assertEqual(evaluate(path), 0)
 
-    def test_clean_report_without_results_key_passes_gate(self) -> None:
-        path = self._write_json("clean.json", _base_report())
+    def test_clean_report_with_expected_target_passes_gate(self) -> None:
+        path = self._write_json(
+            "clean.json",
+            _base_report(Results=[{
+                "Target": "package-lock.json",
+                "Class": "lang-pkgs",
+                "Type": "npm",
+            }]),
+        )
         self.assertEqual(evaluate(path), 0)
+
+    def test_missing_results_fails_closed(self) -> None:
+        path = self._write_json("missing_results.json", _base_report())
+        self.assertEqual(evaluate(path), 2)
+
+    def test_empty_results_fails_closed(self) -> None:
+        path = self._write_json("empty_results.json", _base_report(Results=[]))
+        self.assertEqual(evaluate(path), 2)
+
+    def test_unexpected_target_fails_closed(self) -> None:
+        path = self._write_json(
+            "wrong_target.json",
+            _base_report(Results=[{
+                "Target": "unrelated.lock",
+                "Class": "lang-pkgs",
+                "Type": "npm",
+            }]),
+        )
+        self.assertEqual(evaluate(path), 2)
+
+    def test_wrong_target_type_fails_closed(self) -> None:
+        path = self._write_json(
+            "wrong_type.json",
+            _base_report(Results=[{
+                "Target": "package-lock.json",
+                "Class": "lang-pkgs",
+                "Type": "pip",
+            }]),
+        )
+        self.assertEqual(evaluate(path), 2)
 
     def test_empty_file_returns_scan_error(self) -> None:
         path = self.tmp_dir / "empty.json"
@@ -94,7 +135,7 @@ class QualityGateTests(unittest.TestCase):
             ("array_root.json", []),
             ("results_null.json", _base_report(Results=None)),
             ("results_string.json", _base_report(Results="none")),
-            ("result_not_dict.json", _base_report(Results=["bad"])),
+            ("result_not_dict.json", _base_report(Results=["bad", {"Target": "package-lock.json", "Class": "lang-pkgs", "Type": "npm"}])),
             (
                 "vulns_not_list.json",
                 _base_report(Results=[{"Target": "a", "Vulnerabilities": "bad"}]),
