@@ -1,6 +1,6 @@
 # Fusion Advantec — Junior DevSecOps Take-home
 
-**Status: FAIL (`main`) and PASS (PR #1, open/unmerged) CI runs verified; screenshots and `report/` completion pending.**
+**Status: Complete — FAIL (`main`) and PASS (PR #1, open/unmerged) CI runs, screenshots, JSON artifacts, logs, and both reports are verified and committed.**
 
 ## Purpose
 GitHub Actions on `push` to `main` and `pull_request` to `main` runs a digest-pinned Trivy v0.66.0 filesystem dependency scan (`aquasec/trivy:0.66.0@sha256:086971aaf400beebd94e8300fd8ea623774419597169156cec56eec5b00dfb1e`), exports JSON, and applies a separate High/Critical quality gate (`scripts/quality_gate.py`). Scanner failures are never treated as PASS.
@@ -46,6 +46,8 @@ Workflow hardening, quality-gate validation/tests, remediation verification, and
 | FAIL | `push` (`main`) | `b319129715d45b2c736b2cc403cc8e2bcdc38e7d` | https://github.com/DerbSwag/fusion-devsecops-takehome/actions/runs/44021949406 | `trivy-json-44021949406-1` (`results/run-fail-44021949406.json`) | `GATE_FAIL` (`exit 1`: Critical 1, High 20, Medium 21, Low 7) |
 | PASS | `pull_request` (PR #1, open) | `dbcfa10513c98872961ee933f0da5dc7dc529be8` | https://github.com/DerbSwag/fusion-devsecops-takehome/actions/runs/44024570812 | `trivy-json-44024570812-1` (`results/run-pass-44024570812.json`) | `GATE_PASS` (`exit 0`: Critical 0, High 0, Medium 0, Low 0) |
 
-## Reports & pending manual evidence
-- Screenshots `evidence/run-fail.png` and `evidence/run-pass.png` must be captured manually from the Actions URLs above.
-- See `report/` (`report/executive-summary.md` and `report/technical-report.md`) for report templates to complete from the verified JSON artifacts.
+## Reports & evidence files
+- **Executive Summary**: [report/executive-summary.md](report/executive-summary.md)
+- **Technical Report**: [report/technical-report.md](report/technical-report.md)
+- **CI Screenshots**: [evidence/run-fail.png](evidence/run-fail.png) and [evidence/run-pass.png](evidence/run-pass.png)
+- **CI Logs**: [evidence/logs/run-fail-44021949406.log](evidence/logs/run-fail-44021949406.log) and [evidence/logs/run-pass-44024570812.log](evidence/logs/run-pass-44024570812.log)

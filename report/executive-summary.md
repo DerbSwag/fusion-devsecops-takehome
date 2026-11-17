@@ -25,9 +25,8 @@ xychart-beta
 
 ## Action Plan
 - **Within 1 week**:
-  1. Capture and archive the two pending GitHub Actions UI screenshots (`evidence/run-fail.png`, `evidence/run-pass.png`).
-  2. Review and merge PR [#1](https://github.com/DerbSwag/fusion-devsecops-takehome/pull/1) so `main` carries the remediated dependencies.
-  3. Enable branch protection on `main` requiring the `security-scan` status check to pass before merge.
+  1. Review and merge PR [#1](https://github.com/DerbSwag/fusion-devsecops-takehome/pull/1) so `main` carries the remediated dependencies.
+  2. Enable branch protection on `main` requiring the `security-scan` status check to pass before merge.
 - **Within 1 month**:
   1. Add scheduled weekly Trivy scans (`schedule` cron) to catch newly disclosed CVEs between code changes.
   2. Expand CI coverage beyond dependency SCA to include SAST and secret scanning.
