@@ -1,39 +1,47 @@
 # Executive Summary — Dependency Security & CI Gate
 
-**Overall Risk Rating:** **HIGH (Historical Baseline)** -> **LOW within dependency-scan scope (After PR #1 merged into `main` at `a32f03f` — Run `44027721027` succeeded)**
+## 1. Security Risk Overview
 
-*Rationale:* The `main` branch baseline (`b319129`) contained 21 blocking vulnerabilities (1 Critical, 20 High) in core HTTP, authentication, and utility dependencies. Upgrading those 5 dependencies in PR #1 (`dbcfa10`) eliminated all 49 detected vulnerabilities in the reported scan scope and passed the automated CI quality gate (`exit 0`). PR #1 has since been merged as `a32f03f`; the post-merge `main` run `44027721027` also passed with zero findings.
+- **Historical Baseline Risk:** **HIGH** — The initial repository baseline contained **49 known vulnerabilities** (1 Critical, 20 High, 21 Medium, 7 Low) across core web, HTTP, and authentication dependencies.
+- **Post-Remediation Dependency-Scan Risk:** **LOW (within assessed dependency scope)** — Upgrading the five direct dependencies resolved all 49 detected vulnerabilities (`0` findings), verified across both PR remediation and post-merge `main` CI checks.
+- **Overall Application Security Risk:** **Not fully assessed** — Automated scanning currently covers third-party package dependencies only; application source code, secrets, and runtime infrastructure have not yet been scanned.
 
-## Finding Counts by Severity
-| Baseline vs. Remediated | Critical | High | Medium | Low | Total | CI Gate |
+## 2. Findings by Severity
+
+| Scan Stage | Critical | High | Medium | Low | Total | CI Quality Gate |
 |---|---:|---:|---:|---:|---:|---|
-| Baseline (`main` — Run `44021949406`) | 1 | 20 | 21 | 7 | 49 | **FAIL** (`exit 1`) |
-| Remediated (PR #1 — Run `44024570812`) | 0 | 0 | 0 | 0 | 0 | **PASS** (`exit 0`) |
+| Baseline (`main`, initial state) | 1 | 20 | 21 | 7 | **49** | **FAIL** (`exit 1`) |
+| Remediated (PR #1 & Post-Merge `main`) | 0 | 0 | 0 | 0 | **0** | **PASS** (`exit 0`) |
 
 ```mermaid
 xychart-beta
-    title "Baseline vs. Remediated Vulnerabilities (Trivy 0.66.0)"
+    title "Vulnerabilities Before vs. After Remediation (Trivy 0.66.0)"
     x-axis ["Critical", "High", "Medium", "Low"]
-    y-axis "Findings" 0 --> 25
-    bar [1, 20, 21, 7]
-    bar [0, 0, 0, 0]
+    y-axis "Finding Count" 0 --> 25
+    bar "Baseline (49)" [1, 20, 21, 7]
+    bar "Remediated (0)" [0, 0, 0, 0]
 ```
 
-## Business Impact
-- **Service availability & outages**: Multiple High/Critical flaws in `express` transitive packages (`body-parser`, `path-to-regexp`, `qs`) and `axios` allow attackers to crash or hang Node.js services with crafted requests.
-- **Data exposure & unauthorized access**: Outdated `axios` and `jsonwebtoken` versions expose applications to server-side request forgery (SSRF), proxy credential leakage, and weak JWT key handling.
-- **Release governance**: The CI job fails on High/Critical findings and retains scan artifacts. Enforcement as a mandatory merge requirement still depends on branch-protection configuration.
+## 3. Business Impact
 
-## Action Plan
-- **Within 1 week**:
-  1. **Completed**: PR [#1](https://github.com/DerbSwag/fusion-devsecops-takehome/pull/1) was merged and verified on `main` via run `44027721027`; verify the hardened CI checks on PR [#2](https://github.com/DerbSwag/fusion-devsecops-takehome/pull/2) (`fix/final-submission-hardening-20261117`).
-  2. Enable branch protection on `main` requiring the `security-scan` status check to pass before merge.
-- **Within 1 month**:
-  1. Add scheduled weekly Trivy scans (`schedule` cron) to catch newly disclosed CVEs between code changes.
-  2. Expand CI coverage beyond dependency SCA to include SAST and secret scanning.
+- **Service Availability:** Outdated web-framework and HTTP client packages could allow malformed external requests to slow down or crash Node.js services, risking unplanned downtime.
+- **Data Exposure & Unauthorized Access:** Known flaws in HTTP request and token-handling libraries could expose outbound credentials or weaken authentication checks if triggered in production code. No confirmed exploitation has been observed, as only dependency manifests are present in this sample.
+- **Release Governance:** The automated CI gate now blocks High/Critical dependency vulnerabilities and fails closed on scanner errors, though branch protection on `main` is **not yet active** to enforce this check before every merge.
 
-## Management Decisions / Resources Requested
-- Approve branch-protection enforcement on `main` requiring `security-scan` to pass for all Pull Requests.
-- Allocate ~2–4 engineering hours per month for dependency updates and SAST/secret-scanning onboarding.
+## 4. Remediation Status
 
-**Evidence:** Historical FAIL Run `44021949406` (`b319129`) | Historical PR PASS Run `44024570812` (`dbcfa10`) | Post-merge `main` PASS Run [`44027721027`](https://github.com/DerbSwag/fusion-devsecops-takehome/actions/runs/44027721027). All results are limited to the scanned dependency manifest.
+- **Completed:** Upgraded all five vulnerable direct dependencies (resolving all 49 direct and transitive findings), hardened the CI quality gate with fail-closed target validation and 14 passing unit tests, and merged both remediation and hardening PRs into `main` with passing post-merge CI verification.
+
+## 5. Next Steps — 1 Week / 1 Month
+
+- **Within 1 Week (Owner: DevSecOps / Repository Admin):** Enable GitHub branch protection on `main` requiring the `security-scan` check to pass before merge; review and refresh any remaining pre-merge status notes in repository documentation.
+- **Within 1 Month (Owner: Engineering / DevSecOps):** Add scheduled weekly dependency scans to detect newly disclosed vulnerabilities between commits, and onboard SAST and secret-scanning checks to close current coverage gaps.
+
+## 6. Management Decisions / Resources Requested
+
+- **Policy Approval:** Approve mandatory `security-scan` branch-protection enforcement on `main` (requires repository admin action).
+- **Engineering Capacity:** Allocate ~2–4 engineering hours per month for ongoing dependency updates and SAST/secret-scanning integration.
+
+## 7. Evidence Reference
+
+- **Historical FAIL (`main`):** Run [`44021949406`](https://github.com/DerbSwag/fusion-devsecops-takehome/actions/runs/44021949406) (`b319129`) | **Historical PASS (PR #1):** Run [`44024570812`](https://github.com/DerbSwag/fusion-devsecops-takehome/actions/runs/44024570812) (`dbcfa10`) | **Latest Post-Merge `main` (PR #2):** Run [`44051483315`](https://github.com/DerbSwag/fusion-devsecops-takehome/actions/runs/44051483315) (`61609d4`, artifact `14314006995`). Scope limited to `sample-app/package-lock.json`.
