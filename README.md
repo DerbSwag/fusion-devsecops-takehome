@@ -1,6 +1,6 @@
 # Fusion Advantec — Junior DevSecOps Take-home
 
-**Status: Hardened on `fix/final-submission-hardening-20261117` (pending PR #2 CI verification). Historical FAIL (`main`) and PASS (PR #1, merged to `main`) CI runs, post-merge `main` CI run `44027721027`, screenshots, JSON artifacts, logs, and both reports are verified and committed.**
+**Status: Complete and verified on `main`. Historical FAIL (`main`), PASS (PR #1), hardening (PR #2), and final reports (PR #3) are all merged to `main` and verified by passing post-merge CI runs (`44027721027`, `44051483315`, and `44303024407`), with screenshots, JSON artifacts, logs, and both reports committed.**
 
 ## Purpose
 GitHub Actions on `push` to `main` and `pull_request` to `main` runs a digest-pinned Trivy v0.66.0 filesystem dependency scan (`aquasec/trivy:0.66.0@sha256:086971aaf400beebd94e8300fd8ea623774419597169156cec56eec5b00dfb1e`), exports JSON, and applies a separate High/Critical quality gate (`scripts/quality_gate.py`). Scanner failures are never treated as PASS.
@@ -35,8 +35,8 @@ The workflow runs unit tests before scanning, runs the gate only when `steps.sca
 - **Scope**: Dependency-only scanning (`--scanners vuln` on `/workspace/sample-app`, covering `package-lock.json`) is not SAST and does not test running services, secrets, or infrastructure misconfigurations.
 - **Database drift**: The Trivy vulnerability database updates over time, so scan counts can change by scan date. Always record scan timestamp, tool version, run URL, and commit SHA.
 - **Pass semantics**: A PASS means Trivy scanned the expected npm lockfile and reported zero High/Critical findings within this dependency scope, not proof of an application free of all security risks.
-- **Historical vs current state**: The FAIL artifact was captured on vulnerable `main` before PR #1; the PASS artifact was captured on PR #1 before merge. PR #1 is now merged; `main` at `a32f03fd6fb6491230d6d41a678619b80195b955` independently passed [run 44027721027](https://github.com/DerbSwag/fusion-devsecops-takehome/actions/runs/44027721027). Historical screenshots, JSON, and logs remain unchanged.
-- **Hardened branch validation**: New target-validation tests and CI unit tests must be verified by the branch/PR CI run before considering this hardening accepted.
+- **Historical vs current state**: The FAIL artifact was captured on vulnerable `main` before PR #1; the PASS artifact was captured on PR #1 before merge. PR #1 (remediation), PR #2 (hardening), and PR #3 (final reports) are all merged to `main` and independently verified by passing post-merge runs ([44027721027](https://github.com/DerbSwag/fusion-devsecops-takehome/actions/runs/44027721027), [44051483315](https://github.com/DerbSwag/fusion-devsecops-takehome/actions/runs/44051483315), and [44303024407](https://github.com/DerbSwag/fusion-devsecops-takehome/actions/runs/44303024407)). Historical screenshots, JSON, and logs remain unchanged.
+- **Hardened validation**: Target-validation logic and all 14 quality-gate unit tests were merged in PR #2 and verified in post-merge `main` CI runs (`44051483315` and `44303024407`).
 - Do not deploy intentionally vulnerable sample manifests publicly.
 
 ## AI assistance disclosure
@@ -47,7 +47,9 @@ Workflow hardening, quality-gate validation/tests, remediation verification, and
 |---|---|---|---|---|---|
 | FAIL | `push` (`main`) | `b319129715d45b2c736b2cc403cc8e2bcdc38e7d` | https://github.com/DerbSwag/fusion-devsecops-takehome/actions/runs/44021949406 | `trivy-json-44021949406-1` (`results/run-fail-44021949406.json`) | `GATE_FAIL` (`exit 1`: Critical 1, High 20, Medium 21, Low 7) |
 | PASS | `pull_request` (PR #1, merged) | `dbcfa10513c98872961ee933f0da5dc7dc529be8` | https://github.com/DerbSwag/fusion-devsecops-takehome/actions/runs/44024570812 | `trivy-json-44024570812-1` (`results/run-pass-44024570812.json`) | `GATE_PASS` (`exit 0`: Critical 0, High 0, Medium 0, Low 0) |
-| Post-merge | `push` (`main`) | `a32f03fd6fb6491230d6d41a678619b80195b955` | https://github.com/DerbSwag/fusion-devsecops-takehome/actions/runs/44027721027 | — (post-merge verification run) | `success` |
+| Post-merge (PR #1) | `push` (`main`) | `a32f03fd6fb6491230d6d41a678619b80195b955` | https://github.com/DerbSwag/fusion-devsecops-takehome/actions/runs/44027721027 | — (post-merge verification run) | `success` |
+| Post-merge (PR #2) | `push` (`main`) | `61609d4c245829c4a1de16851ca44a28cf1d3144` | https://github.com/DerbSwag/fusion-devsecops-takehome/actions/runs/44051483315 | `trivy-json-44051483315-1` (CI artifact) | `GATE_PASS` (`exit 0`, 14/14 unit tests) |
+| Post-merge (PR #3) | `push` (`main`) | `d6ac87f0516f40b5cd0b7e5664eaf4c846cc52d8` | https://github.com/DerbSwag/fusion-devsecops-takehome/actions/runs/44303024407 | `trivy-json-44303024407-1` (CI artifact) | `GATE_PASS` (`exit 0`, 14/14 unit tests) |
 
 ## Reports & evidence files
 - **Executive Summary**: [report/executive-summary.md](report/executive-summary.md)
